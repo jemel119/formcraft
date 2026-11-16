@@ -122,16 +122,56 @@ function showErrors(invalid) {
 function buildReview() {
   const review = document.querySelector("#reviewSummary");
   review.replaceChildren();
-  // TODO: add a safe summary of each non-secret value using textContent.
-  const note = document.createElement("p");
-  note.textContent = "TODO: complete the non-secret review summary. Passwords must not be shown.";
-  review.appendChild(note);
-  ["Identity", "Security", "Profile"].forEach(function (title, index) {
+
+  const selectedTier = form.querySelector('input[name="tier"]:checked');
+  const interests = Array.from(
+    form.querySelector("#interests").selectedOptions,
+    function (option) { return option.textContent; }
+  );
+
+  const groups = [
+    {
+      title: "Identity",
+      rows: [
+        ["Full name", form.querySelector("#fullname").value],
+        ["Campus email", form.querySelector("#campusEmail").value],
+        ["Student ID", form.querySelector("#studentId").value],
+      ],
+    },
+    {
+      title: "Security",
+      rows: [["Practice password", "Password set"]],
+    },
+    {
+      title: "Profile",
+      rows: [
+        ["Membership tier", selectedTier.closest("label").textContent.trim()],
+        ["Interests", interests.join(", ")],
+        ["Bio", form.querySelector("#bio").value || "None provided"],
+        ["Terms", "Accepted"],
+      ],
+    },
+  ];
+
+  groups.forEach(function ({ title, rows }, index) {
+    const heading = document.createElement("h3");
+    heading.textContent = title;
+
+    const details = document.createElement("dl");
+    rows.forEach(function ([label, value]) {
+      const term = document.createElement("dt");
+      term.textContent = label;
+      const description = document.createElement("dd");
+      description.textContent = value;
+      details.append(term, description);
+    });
+
     const edit = document.createElement("button");
     edit.type = "button";
     edit.textContent = "Edit " + title;
     edit.addEventListener("click", function () { showStep(index); });
-    review.appendChild(edit);
+
+    review.append(heading, details, edit);
   });
 }
 
