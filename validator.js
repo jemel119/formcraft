@@ -20,6 +20,16 @@ fields.forEach(function (field) {
   error.setAttribute("aria-live", "polite");
 });
 
+function passwordChecks(value) {
+  return {
+    len: value.length >= 8,
+    upper: /[A-Z]/.test(value),
+    lower: /[a-z]/.test(value),
+    digit: /[0-9]/.test(value),
+    symbol: /[^\p{L}\p{N}\s]/u.test(value),
+  };
+}
+
 function customMessage(field) {
   const value = field.value;
 
@@ -40,14 +50,7 @@ function customMessage(field) {
       break;
 
     case "password":
-      if (
-        value &&
-        (value.length < 8 ||
-          !/[A-Z]/.test(value) ||
-          !/[a-z]/.test(value) ||
-          !/[0-9]/.test(value) ||
-          !/[^\p{L}\p{N}\s]/u.test(value))
-      ) {
+      if (value && !Object.values(passwordChecks(value)).every(Boolean)) {
         return "Use at least 8 characters, including an uppercase letter, a lowercase letter, a digit, and a symbol.";
       }
       break;
@@ -149,13 +152,34 @@ fields.forEach(function (field) {
   field.addEventListener("input", function () {
     status.textContent = "";
     if (field.getAttribute("aria-invalid") === "true") checkField(field);
-    // TODO: recheck confirmation if password changes after confirmation was entered.
+        if (field.id === "password") {
+      const confirmation = form.querySelector("#confirm");
+      if (confirmation.value) checkField(confirmation);
+    }
   });
 });
 document.querySelector("#bio").addEventListener("input", function (event) {
   document.querySelector("#bioCount").textContent = 140 - event.target.value.length;
 });
-// TODO: update each #pwRules item on password input; show "Met" / "Needed" text.
+const passwordField = form.querySelector("#password");
+const passwordRuleItems = Array.from(
+  form.querySelectorAll("#pwRules [data-rule]"),
+  function (item) {
+    return { item, label: item.textContent };
+  }
+);
+
+function updatePasswordChecklist() {
+  const checks = passwordChecks(passwordField.value);
+
+  passwordRuleItems.forEach(function ({ item, label }) {
+    const result = checks[item.dataset.rule] ? "Met" : "Needed";
+    item.textContent = `${label} — ${result}`;
+  });
+}
+
+passwordField.addEventListener("input", updatePasswordChecklist);
+updatePasswordChecklist();
 
 form.addEventListener("submit", function (event) {
   event.preventDefault();
