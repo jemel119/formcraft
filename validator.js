@@ -175,15 +175,40 @@ function buildReview() {
   });
 }
 
+function validateFields(fieldsToCheck) {
+  const invalid = fieldsToCheck.filter(function (field) {
+    return !checkField(field);
+  });
+
+  if (invalid.length === 0) return true;
+
+  const firstInvalidStep = sections.indexOf(invalid[0].closest(".step"));
+  if (firstInvalidStep !== currentStep) showStep(firstInvalidStep);
+  showErrors(invalid);
+  return false;
+}
+
+function advanceStep() {
+  const enteringReview = currentStep === sections.length - 2;
+  const fieldsToCheck = enteringReview
+    ? fields
+    : fields.filter(function (field) {
+        return sections[currentStep].contains(field);
+      });
+
+  if (!validateFields(fieldsToCheck)) return;
+
+  if (enteringReview) buildReview();
+  showStep(currentStep + 1);
+}
+
 form.addEventListener("click", function (event) {
-  if (event.target.closest("[data-back]")) showStep(Math.max(0, currentStep - 1));
+  if (event.target.closest("[data-back]")) {
+    showStep(Math.max(0, currentStep - 1));
+  }
+
   if (event.target.closest("[data-next]")) {
-    const invalid = fields.filter(function (field) {
-      return sections[currentStep].contains(field) && !checkField(field);
-    });
-    if (invalid.length) { showErrors(invalid); return; }
-    if (currentStep === 2) buildReview();
-    showStep(Math.min(3, currentStep + 1));
+    advanceStep();
   }
 });
 
@@ -223,10 +248,16 @@ updatePasswordChecklist();
 
 form.addEventListener("submit", function (event) {
   event.preventDefault();
-  const invalid = fields.filter(function (field) { return !checkField(field); });
-  if (invalid.length) { showErrors(invalid); return; }
+
+  if (currentStep < sections.length - 1) {
+    advanceStep();
+    return;
+  }
+
+  if (!validateFields(fields)) return;
+
   buildReview();
-  showStep(3);
-  status.textContent = "Implemented checks passed. Nothing sent. Complete all TODOs before submitting this project.";
+  showStep(sections.length - 1);
+  status.textContent = "Registration checks passed. No data was sent.";
 });
 showStep(0);
