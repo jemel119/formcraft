@@ -21,13 +21,58 @@ fields.forEach(function (field) {
 });
 
 function customMessage(field) {
-  // TODO: return a message for each failed custom rule; return "" when valid.
-  // fullname: reject whitespace-only / punctuation-only names.
-  // campusEmail: require exactly the domain student.gsu.edu after @.
-  // password: 8+ characters, upper, lower, digit, and a non-whitespace symbol.
-  // confirm: compare against password.value without trimming either password.
-  // interests: selectedOptions.length must be 1-3.
-  // bio: explicitly reject value.length > 140, including programmatically set values.
+  const value = field.value;
+
+  switch (field.id) {
+    case "fullname":
+      if (value && !/[A-Za-z]/.test(value)) {
+        return "Enter a name with at least one letter.";
+      }
+      break;
+
+    case "campusEmail":
+      if (value && !field.validity.typeMismatch) {
+        const domain = value.slice(value.lastIndexOf("@") + 1);
+        if (domain.toLowerCase() !== "student.gsu.edu") {
+          return "Use an email address ending in @student.gsu.edu.";
+        }
+      }
+      break;
+
+    case "password":
+      if (
+        value &&
+        (value.length < 8 ||
+          !/[A-Z]/.test(value) ||
+          !/[a-z]/.test(value) ||
+          !/[0-9]/.test(value) ||
+          !/[^\p{L}\p{N}\s]/u.test(value))
+      ) {
+        return "Use at least 8 characters, including an uppercase letter, a lowercase letter, a digit, and a symbol.";
+      }
+      break;
+
+    case "confirm":
+      if (value && value !== form.querySelector("#password").value) {
+        return "Enter the same password in both fields.";
+      }
+      break;
+
+    case "interests": {
+      const count = field.selectedOptions.length;
+      if (count < 1 || count > 3) {
+        return "Choose between 1 and 3 interests.";
+      }
+      break;
+    }
+
+    case "bio":
+      if (value.length > 140) {
+        return "Keep your bio to 140 characters or fewer.";
+      }
+      break;
+  }
+
   return "";
 }
 
